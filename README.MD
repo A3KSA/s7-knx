@@ -11,7 +11,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/A3KSA/s7-knx">
-    <img src="https://automation3000.ch/img/LOGO_A3K_site.png" alt="Logo" width="80" height="80">
+    <img src="https://automation3000.ch/img/LOGO_A3K_site.png" alt="Logo" width="80">
   </a>
 
 <h3 align="center">S7-KNX</h3>
@@ -19,8 +19,8 @@
   <p align="center">
     Gateway for communicating between Siemens S7 PLCs and KNX
     <br />
-    <a href="https://github.com/A3KSA/s7-knx"><strong>Explore the docs »</strong></a>
-    <br />
+
+
     <br />
     ·
     <a href="https://github.com/A3KSA/s7-knx/issues">Report Bug</a>
