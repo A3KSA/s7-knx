@@ -106,6 +106,11 @@ See [NodeJS-inst-url]
     S7_IP=10.10.6.159
     S7_DB=10
    ```
+5. Set up your S7 project with the given UDT and DB
+6. Start
+   ```sh
+   npm start
+   ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -116,9 +121,9 @@ See [NodeJS-inst-url]
 
 The configuration is made through the env variable. Since this project require dotenv, you can create a .env file with the above variable and it will be imported automatically.
 
-The SEND_AT_START(send actual S7 value directly to the bus at launch) is not currently supported but will be in the future.
+The SEND_AT_START (send actual S7 value directly to the bus at launch) is not currently supported but will be in the future.
 
-For the gateway to work, you need to use the given user data type given in the resources folder. You can also find an exemple DB.
+For the gateway to work, you need to use the given user data type in the resources folder. You can also find an exemple DB.
 The DB should always start with an Int specifiyng the DB size.
 
 You can use the following code in your S7 project to update it dynamically :
