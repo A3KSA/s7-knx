@@ -1,0 +1,26 @@
+{
+  "name": "@automation3000/s7-knx",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "watch": "nodemon index.js",
+    "build": "parcel build index.js --out-dir dist"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async-exit-hook": "^2.0.1",
+    "bundle-dependencies": "^1.0.2",
+    "debug": "^4.3.4",
+    "dotenv": "^16.3.1",
+    "knx": "^2.5.2",
+    "node-snap7": "^1.0.7"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5"
+  }
+
+}
