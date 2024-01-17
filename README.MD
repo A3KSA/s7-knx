@@ -54,7 +54,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-This project was made to allow interactions between Siemens S7 PLCs and the KNX bus
+This project was made to allow interactions between Siemens S7 PLCs and the KNX bus.
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -145,6 +145,35 @@ The group address in KNX is represented with slash : 01/07/064.
 The max value for a GA is 15/07/255, in the db it will be represented as 1507255.
 Always add the missings 0 so the gateway know how to translate the main/middle/sub value (00/00/000).
 
+# Data type and conversion
+
+
+| Datapoint 	| KNX size           	| KNX Type       	| S7 Equivalent 	| S7 Size 	| Type 	| Supported 	|
+|-----------	|--------------------	|----------------	|---------------	|---------	|------	|-----------	|
+| DPT1      	| 1 bit              	| Up/Down...     	| Bool          	| 1 bit   	| 1    	| Yes       	|
+| DPT2      	| 1 bit              	| Control        	| Bool          	| 1 bit   	| 1    	| Yes       	|
+| DPT3      	| 4 bit              	| dimming/blind  	|               	| 8 bit   	|      	| No        	|
+| DPT4      	| 8 bit              	| Character      	|               	| 8 bit   	|      	| No        	|
+| DPT5      	| 8 bit UInt         	| Unsigned value 	| UInt          	| 16 bit  	|      	| Yes*      	|
+| DPT6      	| 8 bit Int          	| Signed value   	| Int           	| 16 bit  	|      	| No        	|
+| DPT7      	| 16 bit UInt        	| Unsigned value 	| UInt          	| 16 bit  	|      	| No        	|
+| DPT8      	| 16 bit Int         	| Signed value   	| Int           	| 16 bit  	|      	| No        	|
+| DPT9      	| 16 bit float       	| Float          	| Real          	| 32 bit  	| 9    	| Yes*      	|
+| DPT10     	| 24 bit time        	| Time           	| DWord         	| 32 bit  	|      	| No        	|
+| DPT11     	| 24 bit date        	| Date           	| DWord         	| 32 bit  	|      	| No        	|
+| DPT12     	| 32 bit UInt        	| Unsigned value 	| UDint         	| 32 bit  	|      	| No        	|
+| DPT13     	| 32 bit Int         	| Signed value   	| DInt          	| 32 bit  	|      	| No        	|
+| DPT14     	| 32 bit float       	| Float          	| Real          	| 32 bit  	|      	| No        	|
+| DPT15     	| 32 bit             	| Unsigned value 	| UDInt         	| 32 bit  	|      	| No        	|
+| DPT16     	| 14 byte            	| 14 char string 	| String        	| 640 bit 	|      	| No        	|
+| DPT17     	| 8 bit UInt         	| Scene number   	|               	| 8 bit   	|      	| No        	|
+| DPT18     	| 8 bit UInt         	| Scene control  	|               	| 8 bit   	|      	| No        	|
+| DPT19     	| 8 byte date & time 	| Date and time  	| LWord         	|         	|      	| No        	|
+
+* The value from the PLC should not exceed the size of the KNX DPT.
+
+Since a complete word is used in the PLC for each variable, we will store them in a full word for simplicity. 
+A feature to cap the max value in the gateway to prevent error should be added in the next version.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -155,6 +184,9 @@ Always add the missings 0 so the gateway know how to translate the main/middle/s
 
 - [ ] Add support for multiple KNX connection
 - [ ] Add the SEND_AT_START feature
+- [ ] Limit value that could be out of range and throw necessary message
+- [ ] Add new type
+
 
 
 See the [open issues](https://github.com/A3KSA/s7-knx/issues) for a full list of proposed features (and known issues).
