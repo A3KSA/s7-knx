@@ -29,7 +29,7 @@ const EventEmitter = require('events');
 
 
 // CONSTANTS
-const DB_NUMBER = 10;
+const DB_NUMBER = process.env.S7_DB;
 const STRUCT_SIZE = 14;
 const START_OFFSET = 2;
 
