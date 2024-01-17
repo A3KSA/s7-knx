@@ -19,9 +19,6 @@
   <p align="center">
     Gateway for communicating between Siemens S7 PLCs and KNX
     <br />
-
-
-    <br />
     ·
     <a href="https://github.com/A3KSA/s7-knx/issues">Report Bug</a>
     ·
