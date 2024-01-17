@@ -113,17 +113,8 @@ See [NodeJS-inst-url]
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-The configuration is made through the env variable. Since this project require dotenv, you can create a .env file with the following properties :
+The configuration is made through the env variable. Since this project require dotenv, you can create a .env file with the above variable and it will be imported automatically.
 
-KNX_IP=192.168.1.100
-KNX_PORT=3671
-KNX_ADDRESS=15.15.15
-KNX_MIN_DELAY=10
-KNX_MANUAL_CONNECT=false
-DEBUG='s7-knx:*'
-SEND_AT_START=false
-S7_READ_INTERVAL=100
-S7_IP=10.10.6.159
 
 The SEND_AT_START(send actual S7 value directly to the bus at launch) is not currently supported but will be in the future. 
 
@@ -136,6 +127,7 @@ The SEND_AT_START(send actual S7 value directly to the bus at launch) is not cur
 ## Roadmap
 
 - [ ] Add support for multiple KNX connection
+- [ ] Add the SEND_AT_START feature
 
 
 See the [open issues](https://github.com/A3KSA/s7-knx/issues) for a full list of proposed features (and known issues).
