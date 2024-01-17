@@ -1,0 +1,19 @@
+﻿DATA_BLOCK "KNX"
+{ DB_Accessible_From_OPC_UA := 'FALSE' ;
+ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      DB_SIZE : Int;
+      Static_1 : "KNXDriver_GA";
+      Static_2 : "KNXDriver_GA";
+   END_STRUCT;
+
+
+BEGIN
+   Static_1.GA := 0105060;
+   Static_1."Type" := 1;
+   Static_1.val_bool := true;
+
+END_DATA_BLOCK
+

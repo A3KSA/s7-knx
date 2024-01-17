@@ -1,0 +1,14 @@
+﻿TYPE "KNXDriver_GA"
+VERSION : 0.1
+   STRUCT
+      GA : DWord := 0000000;
+      "Type" : Int;
+      "READ_ONLY" : Bool;   // If true, it is not sent to KNX
+      WRITE_ONLY : Bool;   // If true, it is not read from KNX
+      val_bool : Bool;
+      val_int : Int;
+      val_real : Real;
+   END_STRUCT;
+
+END_TYPE
+
