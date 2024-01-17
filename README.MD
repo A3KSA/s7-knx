@@ -133,6 +133,21 @@ You can use the following code in your S7 project to update it dynamically :
       T     "KNX".DB_SIZE
    ```
 
+# UDT description
+| Line       | Description                      | Exemple |
+|------------|----------------------------------|---------|
+| GA         | KNX Group Address                | 0107064 |
+| Type       | KNX Datapoint type               | 1       |
+| READ_ONLY  | If true, it is not sent to KNX   | false   |
+| WRITE_ONLY | If true, it is not read from KNX | false   |
+| val_bool   | Value from KNX if set to type 1  | true    |
+| val_int    | Int value from KNX if type 5     | 10      |
+| val_real   | Real value from KXN if type 9    | 42.5    |
+
+The group address in KNX is represented with slash : 01/07/064.
+The max value for a GA is 15/07/255, in the db it will be represented as 1507255.
+Always add the missings 0 so the gateway know how to translate the main/middle/sub value (00/00/000).
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
