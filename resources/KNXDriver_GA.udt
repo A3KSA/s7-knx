@@ -1,13 +1,13 @@
 ﻿TYPE "KNXDriver_GA"
 VERSION : 0.1
    STRUCT
-      GA : DWord := 0000000;
-      "Type" : Int;
-      "READ_ONLY" : Bool;   // If true, it is not sent to KNX
-      WRITE_ONLY : Bool;   // If true, it is not read from KNX
-      val_bool : Bool;
-      val_int : Int;
-      val_real : Real;
+      GA : DWord := 0000000;   // GroupAddress 00/00/000 without slash
+      "Type" : Int := 1;   // DPT Type
+      "READ_ONLY" : Bool;   // True to only read from bus
+      WRITE_ONLY : Bool;   // True to only send to bus
+      val_bool : Bool;   // Value for DPT1
+      val_int : Int;   // Value for DPT5
+      val_real : Real;   // Value for DPT9
    END_STRUCT;
 
 END_TYPE
