@@ -43,7 +43,13 @@ class KNXGroupAddress extends EventEmitter {
 	constructor(buffer, offset) {
 		super();
 		this._previousValue = null;
+
+		// Unformatted GA
 		this._previousGA = null;
+
+		// Formatted GA
+		this._previousGroupAddress = null;
+
 		this.groupAddress = "0/0/0";
 		this.offset = offset;
 		this.dpt = "DPT1.001";
@@ -62,9 +68,9 @@ class KNXGroupAddress extends EventEmitter {
 
 		this.groupAddress = GA1 + "/" + GA2 + "/" + GA3;
 
-		if (this._previousGA) {
-			debugGA("Removing listener for " + this._previousGA + "…");
-			this.removeListeners("GroupValue_Write_" + this._previousGA);
+		if (this._previousGroupAddress) {
+			debugGA("Removing listener for " + this._previousGroupAddress + "…");
+			this.removeListeners("GroupValue_Write_" + this._previousGroupAddress);
 		}
 
 		// If on the PLC side, the variable is WRITE ONLY, we don't need to setup a listener to send the value to the PLC
@@ -72,9 +78,14 @@ class KNXGroupAddress extends EventEmitter {
 			this.setupListeners("GroupValue_Write_" + this.groupAddress);
 		}
 
-		this._previousGA = this.groupAddress;
-
+		
 		this.dpt = "DPT" + this.Type + ".001";
+
+		debugGA(
+			"GA changed from " + this._previousGroupAddress + " to " + this.groupAddress
+		);
+
+		this._previousGroupAddress = this.groupAddress;
 	}
 
 	// Update the object with the given buffer
@@ -95,10 +106,9 @@ class KNXGroupAddress extends EventEmitter {
 		// Total size for one entry: 14 bytes
 
 		// Format the GA to a KNX string
-		if (this.groupAddress != this._previousGA) {
-			debugGA(
-				"GA changed from " + this._previousGA + " to " + this.groupAddress
-			);
+		if (this.GA != this._previousGA) {
+			this._previousGA = this.GA;
+
 			await this.setGA();
 		}
 
