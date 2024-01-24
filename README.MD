@@ -114,7 +114,7 @@ See [NodeJS-inst-url]
 
 
 <!-- USAGE EXAMPLES -->
-## Usage
+# Usage
 
 The configuration is made through the env variable. Since this project require dotenv, you can create a .env file with the above variable and it will be imported automatically.
 
@@ -130,22 +130,29 @@ You can use the following code in your S7 project to update it dynamically :
       T     "KNX".DB_SIZE
    ```
 
-# UDT description
-| Line       | Description                      | Exemple |
-|------------|----------------------------------|---------|
-| GA         | KNX Group Address                | 0107064 |
-| Type       | KNX Datapoint type               | 1       |
-| READ_ONLY  | If true, it is not sent to KNX   | false   |
-| WRITE_ONLY | If true, it is not read from KNX | false   |
-| val_bool   | Value from KNX if set to type 1  | true    |
-| val_int    | Int value from KNX if type 5     | 10      |
-| val_real   | Real value from KXN if type 9    | 42.5    |
+## UDT description
+| Line       | Description                        | Exemple |
+|------------|----------------------------------- |---------|
+| GA         | KNX Group Address                  | 0107064 |
+| Type       | KNX Datapoint type                 | 1       |
+| READ_ONLY  | If true, it is not sent to KNX     | false   |
+| WRITE_ONLY | If true, it is not read from KNX   | false   |
+| SEND_REQ   | Request sending to KNX             | true    |
+| SEND_ACK   | Acknowledge of the sending request | false   |
+| val_bool   | Value from KNX if set to type 1    | true    |
+| val_int    | Int value from KNX if type 5       | 10      |
+| val_real   | Real value from KXN if type 9      | 42.5    |
 
+### Group Address (GA)
 The group address in KNX is represented with slash : 01/07/064.
 The max value for a GA is 15/07/255, in the db it will be represented as 1507255.
 Always add the missings 0 so the gateway know how to translate the main/middle/sub value (00/00/000).
 
-# Data type and conversion
+### SEND_REQ and SEND_ACK
+Setting the SEND_REQ to true will tell the gateway to send the value to KNX even if the value asn't changed.
+The gateway then set SEND_ACK to true to tell the PLC it was sent. It is the PLC responsability to set those two flags to false at the next cycle.
+
+## Data type and conversion
 
 
 | Datapoint 	| KNX size           	| KNX Type       	| S7 Equivalent 	| S7 Size 	| Type 	| Supported 	|
@@ -154,7 +161,7 @@ Always add the missings 0 so the gateway know how to translate the main/middle/s
 | DPT2      	| 1 bit              	| Control        	| Bool          	| 1 bit   	| 1    	| Yes       	|
 | DPT3      	| 4 bit              	| dimming/blind  	|               	| 8 bit   	|      	| No        	|
 | DPT4      	| 8 bit              	| Character      	|               	| 8 bit   	|      	| No        	|
-| DPT5      	| 8 bit UInt         	| Unsigned value 	| UInt          	| 16 bit  	|      	| Yes*      	|
+| DPT5      	| 8 bit UInt         	| Unsigned value 	| UInt          	| 16 bit  	| 5    	| Yes*      	|
 | DPT6      	| 8 bit Int          	| Signed value   	| Int           	| 16 bit  	|      	| No        	|
 | DPT7      	| 16 bit UInt        	| Unsigned value 	| UInt          	| 16 bit  	|      	| No        	|
 | DPT8      	| 16 bit Int         	| Signed value   	| Int           	| 16 bit  	|      	| No        	|
