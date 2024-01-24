@@ -406,14 +406,6 @@ async function setupS7() {
 	});
 }
 
-/**
- * Returns a promise that resolves after the specified delay
- * @param {Int} ms
- * @returns
- */
-function delay(ms) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /**
  * Setup the KNX connection
@@ -444,10 +436,8 @@ function setupKNX(retryDelay = 5000) {
 				},
 				disconnected: async () => {
 					debugKNX(
-						"Disconnected from KNX IP gateway, retrying in " + retryDelay + "ms"
+						"Disconnected from KNX IP gateway"
 					);
-					await delay(retryDelay); // Wait for the specified delay
-					//resolve(setupKNX(retryDelay)); // Retry connection
 				},
 				event: function (evt, src, dest, value) {
 					debugKNX(
