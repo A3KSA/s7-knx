@@ -78,7 +78,7 @@ class KNXGroupAddress extends EventEmitter {
 			this.setupListeners("GroupValue_Write_" + this.groupAddress);
 		}
 
-		
+
 		this.dpt = "DPT" + this.Type + ".001";
 
 		debugGA(
@@ -98,8 +98,11 @@ class KNXGroupAddress extends EventEmitter {
 
 		this.isReadOnly = !!(boolByte & 0x01); // Bool at bit 0
 		this.isWriteOnly = !!(boolByte & 0x02); // Bool at bit 1
+		this.send_request = !!(boolByte & 0x04); // Bool at bit 2
+		this.send_ack = !!(boolByte & 0x08); // Bool at bit 3
 
-		this.val_bool = !!(boolByte & 0x04); // Bool at bit 2
+		this.val_bool = !!(boolByte & 0x10); // Bool at bit 4
+
 
 		this.val_int = buffer.readInt16BE(this.offset + 8); // Int - 2 bytes at offset 8
 		this.val_real = buffer.readFloatBE(this.offset + 10); // Real - 4 bytes at offset 10
@@ -134,9 +137,12 @@ class KNXGroupAddress extends EventEmitter {
 					this.offset
 				);
 				// convert the boolean value to a buffer
-				if (this.isReadOnly) myByte |= 1 << 0; // Set 1st bit if bit1 is true
-				if (this.isWriteOnly) myByte |= 1 << 1; // Set 2nd bit if bit2 is true
-				if (this.val_bool) myByte |= 1 << 2; // Set 3rd bit if bit3 is true
+				if (this.isReadOnly) myByte |= 1 << 0; // Set 1st bit - Read Only
+				if (this.isWriteOnly) myByte |= 1 << 1; // Set 2nd bit - Write Only
+				if (this.send_request) myByte |= 1 << 2; // Set 3rd bit - Send Request
+				if (this.send_ack) myByte |= 1 << 3; // Set 4th bit - Send Acknowledge
+				if (this.val_bool) myByte |= 1 << 4; // Set 5rd bit - Value (bool)
+
 				buffer = Buffer.from([myByte]);
 				offset = this.offset + 6;
 				this._previousValue = this.val_bool;
@@ -177,72 +183,124 @@ class KNXGroupAddress extends EventEmitter {
 		}
 
 		if (buffer !== null) {
-			s7client.DBWrite(
-				DB_NUMBER,
-				offset,
-				buffer.length,
-				buffer,
-				function (err) {
-					if (err)
-						return debugS7(
-							" >> DBWrite failed. Code #" +
-							err +
-							" - " +
-							s7client.ErrorText(err)
-						);
-				}
-			);
+			try {
+				await this.writeToPLC(offset, buffer);
+			} catch (error) {
+				console.error(error);
+			}
 		}
 	}
+
+	// Write the buffer to the PLC
+	async writeToPLC(offset, buffer) {
+		return new Promise((resolve, reject) => {
+			s7client.DBWrite(DB_NUMBER, offset, buffer.length, buffer, function (err) {
+				if (err) {
+					debugS7(" >> DBWrite failed. Code #" + err + " - " +
+						s7client.ErrorText(err)
+					);
+					reject(err);
+				} else {
+					resolve();
+				}
+
+			});
+		});
+	}
+
+	// Write the value to the KNX bus
+	async writeToBUS(value) {
+		debugKNX("PLC -> KNX : " + this.groupAddress + " : " + value);
+		connection.write(this.groupAddress, value, this.dpt);
+	}
+
+	// Return the byte with its acutal value and the acknoledge bit set to 1
+	async acknowledge() {
+		try {
+			var buffer = null;
+			var offset = 0;
+			var myByte = 0;
+			this.send_ack = true;
+
+			if (this.isReadOnly) myByte |= 1 << 0; // Set 1st bit
+			if (this.isWriteOnly) myByte |= 1 << 1; // Set 2nd bit
+			if (this.send_request) myByte |= 1 << 2; // Set 3rd bit
+			if (this.send_ack) myByte |= 1 << 3; // Set 4th bit 
+			if (this.val_bool) myByte |= 1 << 4; // Set 5rd bit
+
+			buffer = Buffer.from([myByte]);
+			offset = this.offset + 6;
+
+			await this.writeToPLC(offset, buffer);
+		} catch (error) {
+			console.error(error);
+		}
+
+	}
+
 
 	// Read the value from the PLC and send it to the KNX bus if it's different from the current value
 	// The check of _previousValue is to avoid sending the value to the KNX bus at startup
 	async sendToBus() {
+		var value;
 		// switch to write to a different variable in function of the type value
 		switch (this.Type) {
 			case 1:
-				if (this.val_bool != this._previousValue) {
-					if (this._previousValue !== null) {
-						debugKNX(
-							"PLC -> KNX : " + this.groupAddress + " : " + this.val_bool
-						);
-						connection.write(this.groupAddress, this.val_bool);
-					}
-
-					this._previousValue = this.val_bool;
-				}
+				value = this.val_bool;
 				break;
 
 			case 5:
-				if (this.val_int != this._previousValue) {
-					if (this._previousValue !== null) {
-						debugKNX(
-							"PLC -> KNX : " + this.groupAddress + " : " + this.val_int
-						);
-						connection.write(this.groupAddress, this.val_int, "DPT5.001");
-					}
-
-					this._previousValue = this.val_int;
+				if (this.val_int > 100) {
+					this.val_int = 100;
 				}
+				if (this.val_int < 0) {
+					this.val_int = 0;
+				}
+				value = this.val_int;
 				break;
 
 			case 9:
-				if (this.val_real != this._previousValue) {
-					if (this._previousValue !== null) {
-						debugKNX(
-							"PLC -> KNX : " + this.groupAddress + " : " + this.val_real
-						);
-						connection.write(this.groupAddress, this.val_real, "DPT9.001");
-					}
+				value = this.val_real;
 
-					this._previousValue = this.val_real;
-				}
 				break;
 
 			default:
 				debugS7("Type not supported at " + this.offset + " : " + this.Type);
 				break;
 		}
+
+		if (this._previousValue == null) {
+			this._previousValue = value;
+			return;
+		}
+
+		if (value == this._previousValue && !this.send_request) {
+			return;
+		}
+
+		if (value == this._previousValue && this.send_request == true && this.send_ack == true) {
+			return;
+		}
+
+		
+
+		try {
+			await this.writeToBUS(value);
+			this._previousValue = value;
+		} catch (error) {
+			console.error(error);
+		}
+		
+		// If there was a request from the PLC, we need to acknowledge it
+		if (this.send_request == true) {
+			try {
+				await this.acknowledge();
+			} catch (error) {
+				console.error(error);
+			}
+		}
+
+		return;
 	}
 
 	/**
@@ -305,7 +363,7 @@ class KNXGroupAddress extends EventEmitter {
  * @param {Integer} objectSize
  * @returns
  */
-function mapBufferToObjects(buffer, objectSize) {
+async function mapBufferToObjects(buffer, objectSize) {
 	var i = 0;
 	for (
 		let offset = START_OFFSET; offset < buffer.length; offset += objectSize
@@ -315,7 +373,7 @@ function mapBufferToObjects(buffer, objectSize) {
 			objects[i] = new KNXGroupAddress(buffer, offset);
 		}
 
-		objects[i].update(buffer);
+		await objects[i].update(buffer);
 		i++;
 	}
 	return objects;
@@ -348,14 +406,6 @@ async function setupS7() {
 	});
 }
 
-/**
- * Returns a promise that resolves after the specified delay
- * @param {Int} ms
- * @returns
- */
-function delay(ms) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /**
  * Setup the KNX connection
@@ -363,7 +413,7 @@ function delay(ms) {
  * @returns {Promise<void>}
  * @throws {Error} If the connection fails
  */
-function setupKNX(retryDelay = 5000) {
+function setupKNX() {
 	return new Promise((resolve, reject) => {
 		debugKNX("Initializing KNX connection");
 		debugKNX(process.env.KNX_IP);
@@ -386,10 +436,8 @@ function setupKNX(retryDelay = 5000) {
 				},
 				disconnected: async () => {
 					debugKNX(
-						"Disconnected from KNX IP gateway, retrying in " + retryDelay + "ms"
+						"Disconnected from KNX IP gateway"
 					);
-					await delay(retryDelay); // Wait for the specified delay
-					//resolve(setupKNX(retryDelay)); // Retry connection
 				},
 				event: function (evt, src, dest, value) {
 					debugKNX(
@@ -412,7 +460,7 @@ function setupKNX(retryDelay = 5000) {
  * @throws {Error} If the connection fails
  */
 async function readDB() {
-	s7client.DBRead(DB_NUMBER, 0, dbSize, function (err, res) {
+	s7client.DBRead(DB_NUMBER, 0, dbSize, async function (err, res) {
 		if (err)
 			return debugS7(
 				" >> DBGet failed. Code #" + err + " - " + s7client.ErrorText(err)
@@ -420,7 +468,7 @@ async function readDB() {
 
 		const buffer = res;
 		const objectSize = STRUCT_SIZE;
-		const mappedObjects = mapBufferToObjects(buffer, objectSize);
+		await mapBufferToObjects(buffer, objectSize);
 
 		//debugS7(mappedObjects);
 
