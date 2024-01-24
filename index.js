@@ -413,7 +413,7 @@ async function setupS7() {
  * @returns {Promise<void>}
  * @throws {Error} If the connection fails
  */
-function setupKNX(retryDelay = 5000) {
+function setupKNX() {
 	return new Promise((resolve, reject) => {
 		debugKNX("Initializing KNX connection");
 		debugKNX(process.env.KNX_IP);
