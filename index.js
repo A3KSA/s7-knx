@@ -98,8 +98,11 @@ class KNXGroupAddress extends EventEmitter {
 
 		this.isReadOnly = !!(boolByte & 0x01); // Bool at bit 0
 		this.isWriteOnly = !!(boolByte & 0x02); // Bool at bit 1
+		this.send_request = !!(boolByte & 0x04); // Bool at bit 2
+		this.send_ack = !!(boolByte & 0x08); // Bool at bit 3
+		
+		this.val_bool = !!(boolByte & 0x16); // Bool at bit 4
 
-		this.val_bool = !!(boolByte & 0x04); // Bool at bit 2
 
 		this.val_int = buffer.readInt16BE(this.offset + 8); // Int - 2 bytes at offset 8
 		this.val_real = buffer.readFloatBE(this.offset + 10); // Real - 4 bytes at offset 10
@@ -137,6 +140,12 @@ class KNXGroupAddress extends EventEmitter {
 				if (this.isReadOnly) myByte |= 1 << 0; // Set 1st bit if bit1 is true
 				if (this.isWriteOnly) myByte |= 1 << 1; // Set 2nd bit if bit2 is true
 				if (this.val_bool) myByte |= 1 << 2; // Set 3rd bit if bit3 is true
+				myByte |= 0 << 3; 						// Set 4th bit
+				myByte |= 0 << 4; // Set 5th bit
+				myByte |= 0 << 5; // Set 6th bit
+				myByte |= 0 << 6; // Set 7th bit
+				myByte |= 0 << 7; // Set 8th bit
+
 				buffer = Buffer.from([myByte]);
 				offset = this.offset + 6;
 				this._previousValue = this.val_bool;
