@@ -1,0 +1,38 @@
+﻿DATA_BLOCK "KNX"
+{ DB_Accessible_From_OPC_UA := 'FALSE' ;
+ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      DB_SIZE : Int;
+      WO_DPT1 : "KNXDriver_GA";
+      WO_DPT5 : "KNXDriver_GA";
+      WO_DPT9 : "KNXDriver_GA";
+      RO_DPT9 : "KNXDriver_GA";
+      RO_DPT9_lux : "KNXDriver_GA";
+      RO_DPT14 : "KNXDriver_GA";
+   END_STRUCT;
+
+
+BEGIN
+   WO_DPT1.GA := 0001002;
+   WO_DPT1."Type" := 1;
+   WO_DPT1.WRITE_ONLY := true;
+   WO_DPT5.GA := 0001003;
+   WO_DPT5."Type" := 5;
+   WO_DPT5.WRITE_ONLY := true;
+   WO_DPT9.GA := 0001004;
+   WO_DPT9."Type" := 9;
+   WO_DPT9.WRITE_ONLY := true;
+   RO_DPT9.GA := 0000008;
+   RO_DPT9."Type" := 9;
+   RO_DPT9."READ_ONLY" := true;
+   RO_DPT9_lux.GA := 0000001;
+   RO_DPT9_lux."Type" := 9;
+   RO_DPT9_lux."READ_ONLY" := true;
+   RO_DPT14.GA := 0000005;
+   RO_DPT14."Type" := 14;
+   RO_DPT14."READ_ONLY" := true;
+
+END_DATA_BLOCK
+

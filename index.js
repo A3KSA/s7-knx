@@ -163,6 +163,7 @@ class KNXGroupAddress extends EventEmitter {
 				this._previousValue = this.val_int;
 				break;
 			case 9:
+			case 14:
 				debugS7(
 					"KNX -> PLC : " +
 					this.groupAddress +
@@ -260,6 +261,7 @@ class KNXGroupAddress extends EventEmitter {
 				break;
 
 			case 9:
+			case 14:
 				value = this.val_real;
 
 				break;
@@ -326,6 +328,7 @@ class KNXGroupAddress extends EventEmitter {
 				this.val_int = convertedValue;
 				break;
 			case 9:
+			case 14:
 				this.val_real = convertedValue;
 				break;
 			default:
