@@ -1,6 +1,6 @@
 {
   "name": "@automation3000/s7-knx",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "S7-KNX Gateway",
   "main": "index.js",
   "scripts": {
@@ -16,6 +16,9 @@
     "dotenv": "^16.3.2",
     "knx": "^2.5.2",
     "node-snap7": "^1.0.7"
+  },
+  "devDependencies" : {
+    "nodemon": "^3.0.3"
   }
 
 }
