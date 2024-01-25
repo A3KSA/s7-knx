@@ -13,7 +13,7 @@
   "dependencies": {
     "async-exit-hook": "^2.0.1",
     "debug": "^4.3.4",
-    "dotenv": "^16.3.2",
+    "dotenv": "^16.4.1",
     "knx": "^2.5.2",
     "node-snap7": "^1.0.7"
   },
