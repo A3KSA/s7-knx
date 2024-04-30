@@ -456,7 +456,8 @@ async function mapBufferToObjects(buffer, objectSize) {
  *
  */
 async function setupS7() {
-	console.log(process.env.S7_ip)
+	debugS7("Trying to connect to PLC at :" + process.env.S7_ip)
+	debugS7("PLC KNX DB Number :" + DB_NUMBER)
 	s7client.ConnectTo(process.env.S7_IP, 0, 1, function (err) {
 		if (err)
 			return debugS7(
