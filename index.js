@@ -326,6 +326,7 @@ class KNXGroupAddress extends EventEmitter {
 
 			case 9:
 			case 14:
+			case 232:
 				value = this.val_real;
 
 				break;
@@ -334,9 +335,6 @@ class KNXGroupAddress extends EventEmitter {
 				debugS7("Type not supported at " + this.offset + " : " + this.Type);
 				break;
 		}
-
-		// Corrigé le 14.02.2024 au GYB 
-		//this._previousValue = value;
 
 		if (this._previousValue == null) {
 			this._previousValue = value;
@@ -396,6 +394,7 @@ class KNXGroupAddress extends EventEmitter {
 				break;
 			case 9:
 			case 14:
+			case 232:
 				this.val_real = convertedValue;
 				break;
 			default:
