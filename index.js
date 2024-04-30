@@ -38,6 +38,54 @@ var connection = null;
 
 let objects = [];
 
+
+var counter = 0
+
+   
+class Queue {
+    constructor() {
+        this.items = {}
+        this.frontIndex = 0
+        this.backIndex = 0
+    }
+    enqueue(item) {
+        this.items[this.backIndex] = item
+        this.backIndex++
+        return item
+    }
+    dequeue() {
+        const item = this.items[this.frontIndex]
+		if (item){
+			delete this.items[this.frontIndex]
+			this.frontIndex++
+			return item
+		}
+		return undefined;
+
+    }
+    peek() {
+        return this.items[this.frontIndex]
+    }
+    get printQueue() {
+        return this.items;
+    }
+
+
+}
+
+const queue = new Queue
+
+async function sendSyncKNX() {
+	const item = queue.dequeue()
+	if (item != undefined) {
+		counter++
+
+		debugS7("PLC -> KNX : " + item.groupAddress + " : " + item.value + " -> Counter " + counter);
+		connection.write(item.groupAddress, item.value, item.dpt);
+	}
+
+}
+
 // KNX Group Address Object
 class KNXGroupAddress extends EventEmitter {
 	constructor(buffer, offset) {
@@ -68,11 +116,14 @@ class KNXGroupAddress extends EventEmitter {
 
 		this.groupAddress = GA1 + "/" + GA2 + "/" + GA3;
 
-		if (this._previousGroupAddress) {
-			debugGA("Removing listener for " + this._previousGroupAddress + "…");
-			this.removeListeners("GroupValue_Write_" + this._previousGroupAddress);
+		try {
+			if (this._previousGroupAddress) {
+				debugGA("Removing listener for " + this._previousGroupAddress + "…");
+				this.removeListeners("GroupValue_Write_" + this._previousGroupAddress);
+			}
+		} catch (error) {
+			throw new Error(error, this._previousGroupAddress)
 		}
-
 		// If on the PLC side, the variable is WRITE ONLY, we don't need to setup a listener to send the value to the PLC
 		if (!this.isWriteOnly) {
 			this.setupListeners("GroupValue_Write_" + this.groupAddress);
@@ -100,7 +151,7 @@ class KNXGroupAddress extends EventEmitter {
 		this.isWriteOnly = !!(boolByte & 0x02); // Bool at bit 1
 		this.send_request = !!(boolByte & 0x04); // Bool at bit 2
 		this.send_ack = !!(boolByte & 0x08); // Bool at bit 3
-
+		this.sendByChange = false // For future use - If the value is sent when it changes
 		this.val_bool = !!(boolByte & 0x10); // Bool at bit 4
 
 
@@ -119,6 +170,9 @@ class KNXGroupAddress extends EventEmitter {
 		if (!this.isReadOnly) {
 			await this.sendToBus();
 		}
+		
+		
+		
 	}
 
 	async sendToPLC() {
@@ -211,9 +265,19 @@ class KNXGroupAddress extends EventEmitter {
 
 	// Write the value to the KNX bus
 	async writeToBUS(value) {
-		debugKNX("PLC -> KNX : " + this.groupAddress + " : " + value);
-		connection.write(this.groupAddress, value, this.dpt);
+		//debugS7("PLC -> KNX : " + this.groupAddress + " : " + value);
+		//connection.write(this.groupAddress, value, this.dpt);
+		
+		const item = {
+			groupAddress : this.groupAddress,
+			value : value,
+			dpt : this.dpt
+		}
+		console.log("Enqueue " + item.groupAddress + " " + item.value)
+		queue.enqueue(item)
+		return;
 	}
+
 
 	// Return the byte with its acutal value and the acknoledge bit set to 1
 	async acknowledge() {
@@ -271,6 +335,9 @@ class KNXGroupAddress extends EventEmitter {
 				break;
 		}
 
+		// Corrigé le 14.02.2024 au GYB 
+		//this._previousValue = value;
+
 		if (this._previousValue == null) {
 			this._previousValue = value;
 			return;
@@ -284,7 +351,7 @@ class KNXGroupAddress extends EventEmitter {
 			return;
 		}
 
-		
+
 
 		try {
 			await this.writeToBUS(value);
@@ -292,7 +359,7 @@ class KNXGroupAddress extends EventEmitter {
 		} catch (error) {
 			console.error(error);
 		}
-		
+
 		// If there was a request from the PLC, we need to acknowledge it
 		if (this.send_request == true) {
 			try {
@@ -389,6 +456,7 @@ async function mapBufferToObjects(buffer, objectSize) {
  *
  */
 async function setupS7() {
+	console.log(process.env.S7_ip)
 	s7client.ConnectTo(process.env.S7_IP, 0, 1, function (err) {
 		if (err)
 			return debugS7(
@@ -428,6 +496,7 @@ function setupKNX() {
 		connection = knx.Connection({
 			ipAddr: process.env.KNX_IP, // KNX IP gateway address
 			ipPort: process.env.KNX_PORT, // default KNX IP port
+			debug: "trace",
 			handlers: {
 				connected: () => {
 					debugKNX("Connected to KNX IP gateway");
@@ -454,6 +523,8 @@ function setupKNX() {
 			},
 			// Other configurations
 		});
+
+		
 	});
 }
 
@@ -501,7 +572,7 @@ async function main() {
 	try {
 		await setupKNX(); // Wait for KNX connection to be established
 		await setupS7(); // Proceed with setupS7 only after KNX is connected
-
+		setInterval(sendSyncKNX, 20)
 		exitHook((cb) => {
 			console.log("Disconnecting from KNX…");
 			connection.Disconnect(() => {
