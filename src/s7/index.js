@@ -124,7 +124,7 @@ class PLCConection {
     	// Write the buffer to the PLC
 	async writeDB(offset, buffer) {
 		return new Promise((resolve, reject) => {
-			s7client.DBWrite(this.dbNumber, offset, buffer.length, buffer, function (err) {
+			this.s7client.DBWrite(this.dbNumber, offset, buffer.length, buffer, function (err) {
 				if (err) {
 					debugS7(" >> DBWrite failed. Code #" + err + " - " +
 						s7client.ErrorText(err)
