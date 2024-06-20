@@ -15,12 +15,8 @@ const expressServer = require("./ui/express");
 
 const exitHook = require("async-exit-hook");
 
-// S7 Connection
-const PLCConnection = require("./s7");
-
 // Datapoint
 const DatapointService = require("./datapoint");
-
 
 // DEBUG
 const debugS7 = require("debug")("s7-knx:s7");
@@ -31,11 +27,11 @@ const queue = require("./queue");
 // KNX
 const knxConnection = require("./knx");
 
+// S7
+const plcConnection = require("./s7/connection");
 
 // CONSTANTS
-const DB_NUMBER = Number(process.env.S7_DB);
-const S7_IP = process.env.S7_IP;
-const START_OFFSET = 2;
+const START_OFFSET = Number(process.env.S7_START_OFFSET);
 
 // VARIABLES
 var counter = 0
@@ -96,14 +92,8 @@ async function main() {
 
 		await knxConnection.setupKNX(); // Wait for KNX connection to be established
 
-		// Create the PLC connection
-		const plcConnection = new PLCConnection(
-			S7_IP,
-			DB_NUMBER,
-			START_OFFSET
-		);
-
 		await plcConnection.setupS7(); // Proceed with setupS7 only after KNX is connected
+
 
 		// Start cyclic read of DB
 		const readInterval = process.env.S7_READ_INTERVAL ; // Interval in milliseconds

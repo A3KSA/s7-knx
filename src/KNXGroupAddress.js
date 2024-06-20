@@ -6,8 +6,7 @@ const debugKNX = require("debug")("s7-knx:knx");
 const DPTLib = require("knx/src/dptlib");
 const knxConnection = require("./knx");
 const queue = require("./queue");
-const s7client = require("./s7");
-const DB_NUMBER = 10;
+const plcConnection = require("./s7/connection");
 const { structUDTType } = require("./CONSTANTS");
 
 
@@ -228,19 +227,7 @@ class KNXGroupAddress extends EventEmitter {
 
 	// Write the buffer to the PLC
 	async writeToPLC(offset, buffer) {
-		return new Promise((resolve, reject) => {
-			s7client.DBWrite(DB_NUMBER, offset, buffer.length, buffer, function (err) {
-				if (err) {
-					debugS7(" >> DBWrite failed. Code #" + err + " - " +
-						s7client.ErrorText(err)
-					);
-					reject(err);
-				} else {
-					resolve();
-				}
-
-			});
-		});
+		await plcConnection.writeDB(offset, buffer);
 	}
 
 	// Write the value to the KNX bus

@@ -1,19 +1,18 @@
 const snap7 = require("node-snap7");
-
 const debugS7 = require("debug")("s7-knx:s7");
 
 
+/**
+ * Class to handle the S7 connection
+ * @class
+ */
 class PLCConection {
 
 
     constructor(ip, dbNumber, startOffset) {
-
-
-
         this.ip = ip;
         this.dbNumber = dbNumber
         this.startOffset = startOffset;
-
     }
 
 
@@ -26,6 +25,7 @@ class PLCConection {
         this.s7client = new snap7.S7Client();
         debugS7("Trying to connect to PLC at : " + this.ip);
         debugS7("PLC KNX DB Number : " + this.dbNumber);
+        debugS7("PLC KNX Start Offset : " + this.startOffset);
 
         try {
             await new Promise((resolve, reject) => {
@@ -33,6 +33,7 @@ class PLCConection {
                     if (err) {
                         reject(new Error("Connection failed. Code #" + err + " - " + this.s7client.ErrorText(err)));
                     } else {
+                        debugS7("Connected to PLC");
                         resolve();
                     }
                 });
@@ -43,6 +44,7 @@ class PLCConection {
                     if (err) {
                         reject(new Error("DBRead failed. Code #" + err + " - " + this.s7client.ErrorText(err)));
                     } else {
+                        debugS7("DBRead success");
                         resolve(res);
                     }
                 });
@@ -74,6 +76,7 @@ class PLCConection {
                     if (err) {
                         reject(new Error("DBRead failed. Code #" + err + " - " + this.s7client.ErrorText(err)));
                     } else {
+                        debugS7("DBRead success");
                         resolve(res);
                     }
                 });
@@ -117,6 +120,23 @@ class PLCConection {
             throw error;
         }
     }
+
+    	// Write the buffer to the PLC
+	async writeDB(offset, buffer) {
+		return new Promise((resolve, reject) => {
+			s7client.DBWrite(this.dbNumber, offset, buffer.length, buffer, function (err) {
+				if (err) {
+					debugS7(" >> DBWrite failed. Code #" + err + " - " +
+						s7client.ErrorText(err)
+					);
+					reject(err);
+				} else {
+					resolve();
+				}
+
+			});
+		});
+	}
 }
 
 
