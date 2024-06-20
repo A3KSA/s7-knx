@@ -1,6 +1,6 @@
 {
   "name": "@automation3000/s7-knx",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "S7-KNX Gateway",
   "main": "src/index.js",
   "scripts": {
