@@ -308,7 +308,7 @@ class KNXGroupAddress extends EventEmitter {
 		if (compareValues(value, this._previousValue) && !this.send_request) {
 			return;
 		}
-
+		
 		// If previous value is the same as the current value and the request and ack are true, we don't need to send it
 		if (compareValues(value, this._previousValue) && this.send_request && this.send_ack) {
 			return;

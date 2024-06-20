@@ -31,7 +31,7 @@ class KNXConnection {
             this.connection = knx.Connection({
                 ipAddr: process.env.KNX_IP, // KNX IP gateway address
                 ipPort: process.env.KNX_PORT, // default KNX IP port
-                debug: "trace",
+                debug: process.env.KNX_DEBUG, // enable the debug output
                 handlers: {
                     connected: () => {
                         debugKNX("Connected to KNX IP gateway");
