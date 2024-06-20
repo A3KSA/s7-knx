@@ -2,6 +2,7 @@ const {removeLeadingZeros, clamp, compareValues} = require('./utils');
 const EventEmitter = require("events");
 const debugGA = require("debug")("s7-knx:ga");
 const debugS7 = require("debug")("s7-knx:s7");
+const debugQueue = require("debug")("s7-knx:queue");
 const debugKNX = require("debug")("s7-knx:knx");
 const DPTLib = require("knx/src/dptlib");
 const knxConnection = require("./knx");
@@ -237,7 +238,7 @@ class KNXGroupAddress extends EventEmitter {
 			value: value,
 			dpt: this.dpt
 		}
-		console.log("Enqueue " + item.groupAddress + " " + item.value)
+		debugQueue("Enqueue " + item.groupAddress + " " + item.value)
 		queue.enqueue(item)
 		return;
 	}
