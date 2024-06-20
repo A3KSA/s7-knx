@@ -1,10 +1,9 @@
-const {removeLeadingZeros} = require('./utils');
+const {removeLeadingZeros, clamp, compareValues} = require('./utils');
 const EventEmitter = require("events");
 const debugGA = require("debug")("s7-knx:ga");
 const debugS7 = require("debug")("s7-knx:s7");
 const debugKNX = require("debug")("s7-knx:knx");
 const DPTLib = require("knx/src/dptlib");
-const { stringify } = require("querystring");
 const knxConnection = require("./knx");
 const queue = require("./queue");
 const s7client = require("./s7");
@@ -291,12 +290,7 @@ class KNXGroupAddress extends EventEmitter {
 				break;
 
 			case 5:
-				if (this.val_int > 100) {
-					this.val_int = 100;
-				}
-				if (this.val_int < 0) {
-					this.val_int = 0;
-				}
+				this.val_int = clamp(this.val_int, 0, 100);
 				value = this.val_int;
 				break;
 
@@ -324,12 +318,12 @@ class KNXGroupAddress extends EventEmitter {
 		}
 
 		// If the value is the same as the previous one, we don't need to send it, except if there was a request from the PLC
-		if (value == this._previousValue && !this.send_request) {
+		if (compareValues(value, this._previousValue) && !this.send_request) {
 			return;
-		} 
+		}
 
 		// If previous value is the same as the current value and the request and ack are true, we don't need to send it
-		if (value == this._previousValue && this.send_request == true && this.send_ack == true) {
+		if (compareValues(value, this._previousValue) && this.send_request && this.send_ack) {
 			return;
 		}
 
@@ -399,7 +393,7 @@ class KNXGroupAddress extends EventEmitter {
 	 * @param {String} eventName
 	 */
 	removeListeners(eventName) {
-		knxConnection.connection.removeListener(eventName, this.eventHandler.bind(this));
+		knxConnection.connection.off(eventName, this.eventHandler.bind(this));
 	}
 
 	/**
