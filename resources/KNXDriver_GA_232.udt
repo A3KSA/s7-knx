@@ -1,0 +1,16 @@
+﻿TYPE "KNXDriver_GA_232"
+VERSION : 0.1
+   STRUCT
+      GA : DWord := 0000000;   // GroupAddress 00/00/000 without slash
+      "Type" : Int := 232;   // DPT Type
+      "READ_ONLY" : Bool;   // True to only read from bus
+      WRITE_ONLY : Bool;   // True to only send to bus
+      SEND_REQ : Bool;   // Request the driver to send the value
+      SEND_ACK : Bool;   // ACK from the driver of the SEND_REQ
+      byte_0 : Byte;   // RED
+      byte_1 : Byte;   // GREE
+      byte_2 : Byte;   // BLUE
+   END_STRUCT;
+
+END_TYPE
+
