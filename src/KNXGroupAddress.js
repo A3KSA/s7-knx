@@ -1,94 +1,20 @@
-/**
- * @fileoverview
- * This script is used to read and write values from a KNX bus to a S7 PLC.
- * It uses the node-snap7 library to read and write values from the PLC.
- * It uses the knx library to read and write values from the KNX bus.
- * @author Zacharie Monnet
- * @version 1.0.0
- * @copyright
- */
-
-const dotenv = require("dotenv");
-dotenv.config();
-
-const exitHook = require("async-exit-hook");
-
-var snap7 = require("node-snap7");
-var s7client = new snap7.S7Client();
-
-// KNX
-const knx = require("knx");
-const DPTLib = require("knx/src/dptlib");
-
-// DEBUG
-const debugKNX = require("debug")("s7-knx:knx");
-const debugS7 = require("debug")("s7-knx:s7");
-const debugGA = require("debug")("s7-knx:ga");
-
+const {removeLeadingZeros} = require('./utils');
 const EventEmitter = require("events");
+const debugGA = require("debug")("s7-knx:ga");
+const debugS7 = require("debug")("s7-knx:s7");
+const debugKNX = require("debug")("s7-knx:knx");
+const DPTLib = require("knx/src/dptlib");
+const { stringify } = require("querystring");
+const knxConnection = require("./knx");
+const queue = require("./queue");
+const s7client = require("./s7");
+const DB_NUMBER = 10;
+const { structUDTType } = require("./CONSTANTS");
 
-// CONSTANTS
-const DB_NUMBER = Number(process.env.S7_DB);
-const STRUCT_SIZE = 14;
-const START_OFFSET = 2;
-
-// VARIABLES
-var dbSize = 0;
-var connection = null;
-
-let objects = [];
-
-
-var counter = 0
-
-   
-class Queue {
-    constructor() {
-        this.items = {}
-        this.frontIndex = 0
-        this.backIndex = 0
-    }
-    enqueue(item) {
-        this.items[this.backIndex] = item
-        this.backIndex++
-        return item
-    }
-    dequeue() {
-        const item = this.items[this.frontIndex]
-		if (item){
-			delete this.items[this.frontIndex]
-			this.frontIndex++
-			return item
-		}
-		return undefined;
-
-    }
-    peek() {
-        return this.items[this.frontIndex]
-    }
-    get printQueue() {
-        return this.items;
-    }
-
-
-}
-
-const queue = new Queue
-
-async function sendSyncKNX() {
-	const item = queue.dequeue()
-	if (item != undefined) {
-		counter++
-
-		debugS7("PLC -> KNX : " + item.groupAddress + " : " + item.value + " -> Counter " + counter);
-		connection.write(item.groupAddress, item.value, item.dpt);
-	}
-
-}
 
 // KNX Group Address Object
 class KNXGroupAddress extends EventEmitter {
-	constructor(buffer, offset) {
+	constructor(offset) {
 		super();
 		this._previousValue = null;
 
@@ -101,7 +27,27 @@ class KNXGroupAddress extends EventEmitter {
 		this.groupAddress = "0/0/0";
 		this.offset = offset;
 		this.dpt = "DPT1.001";
+		this.byte = [];
+
 	}
+
+    toPlainObject() {
+        return {
+            groupAddress: this.groupAddress,
+            offset: this.offset,
+            dpt: this.dpt,
+            val_bool: this.val_bool,
+            val_int: this.val_int,
+            val_real: this.val_real,
+            isReadOnly: this.isReadOnly,
+            isWriteOnly: this.isWriteOnly,
+            send_request: this.send_request,
+            send_ack: this.send_ack,
+            sendByChange: this.sendByChange,
+            Type: this.type,
+			byte : this.byte
+        }
+    }
 
 	// function to translate the GA (groupAdress) to a KNX string like 0/00/000 because this.GA format is 0000000
 	async setGA() {
@@ -124,16 +70,17 @@ class KNXGroupAddress extends EventEmitter {
 		} catch (error) {
 			throw new Error(error, this._previousGroupAddress)
 		}
+
 		// If on the PLC side, the variable is WRITE ONLY, we don't need to setup a listener to send the value to the PLC
 		if (!this.isWriteOnly) {
 			this.setupListeners("GroupValue_Write_" + this.groupAddress);
 		}
 
 
-		this.dpt = "DPT" + this.Type + ".001";
+		this.dpt = "DPT" + this.type + ".001";
 
 		debugGA(
-			"GA changed from " + this._previousGroupAddress + " to " + this.groupAddress
+			"GA changed from " + this._previousGroupAddress + " to " + this.groupAddress + " with DPT " + this.dpt + " and type " + this.type 
 		);
 
 		this._previousGroupAddress = this.groupAddress;
@@ -141,23 +88,29 @@ class KNXGroupAddress extends EventEmitter {
 
 	// Update the object with the given buffer
 	async update(buffer) {
-		this.GA = buffer.readUInt32BE(this.offset); // DWord - 4 bytes at offset 0
-		this.Type = buffer.readInt16BE(this.offset + 4); // Int - 2 bytes at offset 4
+		const structOffset = 0;
+		this.GA = buffer.readUInt32BE(structOffset); // DWord - 4 bytes at offset 0
+		this.type = buffer.readInt16BE(structOffset + 4); // Int - 2 bytes at offset 4
 
 		// Reading a byte and extracting bits for boolean values
-		const boolByte = buffer.readUInt8(this.offset + 6);
+		const boolByte = buffer.readUInt8(structOffset + 6);
 
 		this.isReadOnly = !!(boolByte & 0x01); // Bool at bit 0
 		this.isWriteOnly = !!(boolByte & 0x02); // Bool at bit 1
 		this.send_request = !!(boolByte & 0x04); // Bool at bit 2
 		this.send_ack = !!(boolByte & 0x08); // Bool at bit 3
 		this.sendByChange = false // For future use - If the value is sent when it changes
+
+		if (structUDTType[this.type].type == "Generic") {
 		this.val_bool = !!(boolByte & 0x10); // Bool at bit 4
-
-
-		this.val_int = buffer.readInt16BE(this.offset + 8); // Int - 2 bytes at offset 8
-		this.val_real = buffer.readFloatBE(this.offset + 10); // Real - 4 bytes at offset 10
+		this.val_int = buffer.readInt16BE(structOffset + 8); // Int - 2 bytes at offset 8
+		this.val_real = buffer.readFloatBE(structOffset + 10); // Real - 4 bytes at offset 10
 		// Total size for one entry: 14 bytes
+		} else if (structUDTType[this.type].type == "232") {
+			this.byte[0] = buffer.readUInt8(structOffset + 7);
+			this.byte[1] = buffer.readUInt8(structOffset + 8);
+			this.byte[2] = buffer.readUInt8(structOffset + 9);
+		}
 
 		// Format the GA to a KNX string
 		if (this.GA != this._previousGA) {
@@ -170,9 +123,7 @@ class KNXGroupAddress extends EventEmitter {
 		if (!this.isReadOnly) {
 			await this.sendToBus();
 		}
-		
-		
-		
+
 	}
 
 	async sendToPLC() {
@@ -180,7 +131,7 @@ class KNXGroupAddress extends EventEmitter {
 		var buffer = null;
 		var offset = 0;
 		var myByte = 0;
-		switch (this.Type) {
+		switch (this.type) {
 			case 1:
 				debugS7(
 					"KNX -> PLC : " +
@@ -217,6 +168,20 @@ class KNXGroupAddress extends EventEmitter {
 				this._previousValue = this.val_int;
 				break;
 			case 9:
+				debugS7(
+					"KNX -> PLC : " +
+					this.groupAddress +
+					" = " +
+					this.val_real +
+					" : " +
+					this.offset
+				);
+				// convert the int value to a buffer, if it's a real value, it will be rounded
+				buffer = Buffer.alloc(4);
+				buffer.writeFloatBE(this.val_real);
+				offset = this.offset + 10;
+				this._previousValue = this.val_real;
+				break;
 			case 14:
 				debugS7(
 					"KNX -> PLC : " +
@@ -226,14 +191,30 @@ class KNXGroupAddress extends EventEmitter {
 					" : " +
 					this.offset
 				);
-				// convert the real value to a buffer
+				// convert the int value to a buffer, if it's a real value, it will be rounded
 				buffer = Buffer.alloc(4);
 				buffer.writeFloatBE(this.val_real);
 				offset = this.offset + 10;
 				this._previousValue = this.val_real;
 				break;
+			case 232:
+				debugS7(
+					"KNX -> PLC : " +
+					this.groupAddress +
+					" = " +
+					this.byte +
+					" : " +
+					this.offset
+				);
+				// convert the real value to a buffer
+				buffer = Buffer.from(this.byte);
+				
+				offset = this.offset + 7;
+				this._previousValue = this.byte;
+				break;
+
 			default:
-				debugS7("Type not supported at " + this.offset + " : " + this.Type);
+				debugS7("Type not supported at " + this.offset + " : " + this.type);
 				break;
 		}
 
@@ -265,19 +246,15 @@ class KNXGroupAddress extends EventEmitter {
 
 	// Write the value to the KNX bus
 	async writeToBUS(value) {
-		//debugS7("PLC -> KNX : " + this.groupAddress + " : " + value);
-		//connection.write(this.groupAddress, value, this.dpt);
-		
 		const item = {
-			groupAddress : this.groupAddress,
-			value : value,
-			dpt : this.dpt
+			groupAddress: this.groupAddress,
+			value: value,
+			dpt: this.dpt
 		}
 		console.log("Enqueue " + item.groupAddress + " " + item.value)
 		queue.enqueue(item)
 		return;
 	}
-
 
 	// Return the byte with its acutal value and the acknoledge bit set to 1
 	async acknowledge() {
@@ -303,13 +280,12 @@ class KNXGroupAddress extends EventEmitter {
 
 	}
 
-
 	// Read the value from the PLC and send it to the KNX bus if it's different from the current value
 	// The check of _previousValue is to avoid sending the value to the KNX bus at startup
 	async sendToBus() {
 		var value;
 		// switch to write to a different variable in function of the type value
-		switch (this.Type) {
+		switch (this.type) {
 			case 1:
 				value = this.val_bool;
 				break;
@@ -325,32 +301,39 @@ class KNXGroupAddress extends EventEmitter {
 				break;
 
 			case 9:
-			case 14:
-			case 232:
 				value = this.val_real;
+				break;
 
+			case 14:
+				value = this.val_real;
+				break;
+
+			case 232:
+				value = { red: this.byte[0], green: this.byte[1], blue: this.byte[2] };
 				break;
 
 			default:
-				debugS7("Type not supported at " + this.offset + " : " + this.Type);
+				debugS7("sendtoBus : Type not supported at " + this.offset + " : " + this.type);
 				break;
 		}
 
+		// Prevent sending the value to the KNX bus at startup
 		if (this._previousValue == null) {
 			this._previousValue = value;
 			return;
 		}
 
+		// If the value is the same as the previous one, we don't need to send it, except if there was a request from the PLC
 		if (value == this._previousValue && !this.send_request) {
 			return;
-		}
+		} 
 
+		// If previous value is the same as the current value and the request and ack are true, we don't need to send it
 		if (value == this._previousValue && this.send_request == true && this.send_ack == true) {
 			return;
 		}
 
-
-
+		// Send the value to the KNX bus
 		try {
 			await this.writeToBUS(value);
 			this._previousValue = value;
@@ -375,7 +358,7 @@ class KNXGroupAddress extends EventEmitter {
 	 * @param {String} eventName
 	 */
 	setupListeners(eventName) {
-		connection.on(eventName, (...args) => this.eventHandler(...args));
+		knxConnection.connection.on(eventName, (...args) => this.eventHandler(...args));
 	}
 
 	/**
@@ -385,7 +368,7 @@ class KNXGroupAddress extends EventEmitter {
 	 */
 	eventHandler(src, value) {
 		var convertedValue = this.convertFromDPT(value);
-		switch (this.Type) {
+		switch (this.type) {
 			case 1:
 				this.val_bool = convertedValue;
 				break;
@@ -393,12 +376,18 @@ class KNXGroupAddress extends EventEmitter {
 				this.val_int = convertedValue;
 				break;
 			case 9:
-			case 14:
-			case 232:
 				this.val_real = convertedValue;
 				break;
+			case 14:
+				this.val_real = convertedValue;
+				break;
+			case 232:
+				this.byte[0] = convertedValue.red
+				this.byte[1] = convertedValue.green
+				this.byte[2] = convertedValue.blue
+				break;
 			default:
-				debugKNX("Type not supported");
+				debugKNX("eventHandler : Type not supported");
 				break;
 		}
 
@@ -410,7 +399,7 @@ class KNXGroupAddress extends EventEmitter {
 	 * @param {String} eventName
 	 */
 	removeListeners(eventName) {
-		connection.removeListener(eventName, this.eventHandler.bind(this));
+		knxConnection.connection.removeListener(eventName, this.eventHandler.bind(this));
 	}
 
 	/**
@@ -426,164 +415,4 @@ class KNXGroupAddress extends EventEmitter {
 	}
 }
 
-/**
- *
- * @param {Buffer} buffer
- * @param {Integer} objectSize
- * @returns
- */
-async function mapBufferToObjects(buffer, objectSize) {
-	var i = 0;
-	for (
-		let offset = START_OFFSET; offset < buffer.length; offset += objectSize
-	) {
-		// create a new object if it doesn't exist
-		if (objects[i] == null) {
-			objects[i] = new KNXGroupAddress(buffer, offset);
-		}
-
-		await objects[i].update(buffer);
-		i++;
-	}
-	return objects;
-}
-
-/**
- * Setup the S7 connection
- * @returns {Promise<void>}
- * @throws {Error} If the connection fails
- *
- */
-async function setupS7() {
-	debugS7("Trying to connect to PLC at :" + process.env.S7_ip)
-	debugS7("PLC KNX DB Number :" + DB_NUMBER)
-	s7client.ConnectTo(process.env.S7_IP, 0, 1, function (err) {
-		if (err)
-			return debugS7(
-				" >> Connection failed. Code #" + err + " - " + s7client.ErrorText(err)
-			);
-
-		s7client.DBRead(DB_NUMBER, 0, 2, function (err, res) {
-			if (err)
-				return debugS7(
-					" >> DBGet failed. Code #" + err + " - " + s7client.ErrorText(err)
-				);
-			const buffer = res;
-			dbSize = buffer.readUInt16BE(0);
-			debugS7("DB Size : " + dbSize);
-
-			readDB();
-		});
-	});
-}
-
-
-/**
- * Setup the KNX connection
- * @param {Int} retryDelay
- * @returns {Promise<void>}
- * @throws {Error} If the connection fails
- */
-function setupKNX() {
-	return new Promise((resolve, reject) => {
-		debugKNX("Initializing KNX connection");
-		debugKNX(process.env.KNX_IP);
-		debugKNX(process.env.KNX_PORT);
-		debugKNX(process.env.KNX_MANUAL_CONNECT);
-		debugKNX(process.env.KNX_MIN_DELAY);
-		debugKNX(process.env.KNX_ADDRESS);
-
-		connection = knx.Connection({
-			ipAddr: process.env.KNX_IP, // KNX IP gateway address
-			ipPort: process.env.KNX_PORT, // default KNX IP port
-			debug: "trace",
-			handlers: {
-				connected: () => {
-					debugKNX("Connected to KNX IP gateway");
-					resolve(); // Resolve the promise when connected
-				},
-				error: (connstatus) => {
-					debugKNX(`KNX connection error: ${connstatus}`);
-					reject(connstatus); // Reject the promise on error
-				},
-				disconnected: async () => {
-					debugKNX(
-						"Disconnected from KNX IP gateway"
-					);
-				},
-				event: function (evt, src, dest, value) {
-					debugKNX(
-						"event: %s, src: %j, dest: %j, value: %j",
-						evt,
-						src,
-						dest,
-						value
-					);
-				},
-			},
-			// Other configurations
-		});
-
-		
-	});
-}
-
-/**
- * Read the DB from the PLC and update the objects
- * @returns {Promise<void>}
- * @throws {Error} If the connection fails
- */
-async function readDB() {
-	s7client.DBRead(DB_NUMBER, 0, dbSize, async function (err, res) {
-		if (err)
-			return debugS7(
-				" >> DBGet failed. Code #" + err + " - " + s7client.ErrorText(err)
-			);
-
-		const buffer = res;
-		const objectSize = STRUCT_SIZE;
-		await mapBufferToObjects(buffer, objectSize);
-
-		//debugS7(mappedObjects);
-
-		setTimeout(readDB, 100);
-	});
-}
-
-/**
- * Remove leading zeros from a string
- * @param {String} value
- * @returns
- */
-function removeLeadingZeros(value) {
-	// Check if the value is "0" or only contains zeros, return "0"
-	if (value === "0" || /^0+$/.test(value)) {
-		return "0";
-	}
-
-	// Remove leading zeros and return the result
-	return value.replace(/^0+/, "");
-}
-
-/**
- * Main function
- */
-async function main() {
-	try {
-		await setupKNX(); // Wait for KNX connection to be established
-		await setupS7(); // Proceed with setupS7 only after KNX is connected
-		setInterval(sendSyncKNX, 20)
-		exitHook((cb) => {
-			console.log("Disconnecting from KNX…");
-			connection.Disconnect(() => {
-				console.log("Disconnected from KNX");
-				cb();
-			});
-		});
-	} catch (error) {
-		console.error("Error in setup:", error);
-		// Handle any setup errors here
-	}
-}
-
-main();
+module.exports = KNXGroupAddress;
