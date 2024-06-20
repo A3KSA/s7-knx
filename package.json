@@ -14,7 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "async-exit-hook": "^2.0.1",
-    "debug": "^4.3.4",
+    "debug": "^4.3.5",
     "dotenv": "^16.4.5",
     "knx": "^2.5.4",
     "node-snap7": "^1.0.7"
