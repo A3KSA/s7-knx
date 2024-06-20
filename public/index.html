@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tableau de Données</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tableau de Données</h1>
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Group Address</th>
+        <th>Type</th>
+        <th>Offset</th>
+        <th>DPT</th>
+        <th>Value (bool)</th>
+        <th>Value (int)</th>
+        <th>Value (real)</th>
+        <th>Value (bytes)</th>
+        <th>Read Only</th>
+        <th>Write Only</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data rows will be inserted here -->
+    </tbody>
+  </table>
+
+  <script>
+    // Function to fetch data from /datapoint
+    async function fetchData() {
+      try {
+        const response = await fetch('/datapoint');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        
+        // Get the table body element
+        const tableBody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+        
+        // Clear any existing rows
+        tableBody.innerHTML = '';
+
+        // Iterate through the data and create rows
+        data.forEach(item => {
+          const row = document.createElement('tr');
+          
+          // Create and append cells for each data field
+          const groupAddressCell = document.createElement('td');
+          groupAddressCell.textContent = item.groupAddress;
+          row.appendChild(groupAddressCell);
+
+          const typeCell = document.createElement('td');
+          typeCell.textContent = item.type;
+          row.appendChild(typeCell);
+
+          const offsetCell = document.createElement('td');
+          offsetCell.textContent = item.offset;
+          row.appendChild(offsetCell);
+
+          const dptCell = document.createElement('td');
+          dptCell.textContent = item.dpt;
+          row.appendChild(dptCell);
+
+          const valBoolCell = document.createElement('td');
+          valBoolCell.textContent = item.val_bool;
+          row.appendChild(valBoolCell);
+
+          const valIntCell = document.createElement('td');
+          valIntCell.textContent = item.val_int;
+          row.appendChild(valIntCell);
+
+          const valRealCell = document.createElement('td');
+          valRealCell.textContent = item.val_real;
+          row.appendChild(valRealCell);
+
+          const valBytesCell = document.createElement('td');
+          valBytesCell.textContent = item.byte;
+          row.appendChild(valBytesCell);
+
+          const readOnlyCell = document.createElement('td');
+          readOnlyCell.textContent = item.isReadOnly;
+          row.appendChild(readOnlyCell);
+
+          const writeOnlyCell = document.createElement('td');
+          writeOnlyCell.textContent = item.isWriteOnly;
+          row.appendChild(writeOnlyCell);
+          
+          // Append the row to the table body
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error('There has been a problem with your fetch operation:', error);
+      }
+    }
+
+    // Call the fetchData function when the page loads
+    window.onload = fetchData;
+  </script>
+</body>
+</html>
