@@ -191,7 +191,7 @@ The gateway then set SEND_ACK to true to tell the PLC it was sent. It is the PLC
 | DPT10     	| 24 bit time        	| Time           	| DWord         	| 32 bit  	|      	| No        	|
 | DPT11     	| 24 bit date        	| Date           	| DWord         	| 32 bit  	|      	| No        	|
 | DPT12     	| 32 bit UInt        	| Unsigned value 	| UDint         	| 32 bit  	|      	| No        	|
-| DPT13     	| 32 bit Int         	| Signed value   	| DInt          	| 32 bit  	|      	| No        	|
+| DPT13     	| 32 bit Int         	| Signed value   	| DInt          	| 32 bit  	| 13    | Yes        	|
 | DPT14     	| 32 bit float       	| Float          	| Real          	| 32 bit  	| 14   	| Yes        	|
 | DPT15     	| 32 bit             	| Unsigned value 	| UDInt         	| 32 bit  	|      	| No        	|
 | DPT16     	| 14 byte            	| 14 char string 	| String        	| 640 bit 	|      	| No        	|
@@ -216,6 +216,7 @@ A feature to cap the max value in the gateway to prevent error should be added i
 - [ ] Add the SEND_AT_START feature
 - [ ] Limit value that could be out of range and throw necessary message
 - [ ] Add new type
+- [ ] Improve logging (debug, trace, info...)
 
 
 

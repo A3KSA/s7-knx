@@ -86,9 +86,12 @@ class KNXGroupAddress {
 
 		this.dpt = "DPT" + this.type + ".001";
 
-		debugGA(
-			"GA changed from " + this._previousGroupAddress + " to " + this.groupAddress + " with DPT " + this.dpt + " and type " + this.type
-		);
+		const str1 = "GA changed from " + this._previousGroupAddress
+		const str2 = " to " + this.groupAddress
+		const str3 = " with DPT " + this.dpt
+		const str4 = " and type " + this.type
+
+		debugGA(str1.padEnd(25) + str2.padEnd(14) + str3.padEnd(20) + str4);
 
 		this._previousGroupAddress = this.groupAddress;
 	}
@@ -144,7 +147,7 @@ class KNXGroupAddress {
 			case 1:
 				debugS7(
 					"KNX -> PLC : " +
-					this.groupAddress +
+					this.groupAddress.padEnd(10) +
 					" = " +
 					this.val_bool +
 					" DB Offset : " +
@@ -164,7 +167,7 @@ class KNXGroupAddress {
 			case 5:
 				debugS7(
 					"KNX -> PLC : " +
-					this.groupAddress +
+					this.groupAddress.padEnd(10) +
 					" = " +
 					this.val_int +
 					" : " +
@@ -179,7 +182,7 @@ class KNXGroupAddress {
 			case 9, 13:
 				debugS7(
 					"KNX -> PLC : " +
-					this.groupAddress +
+					this.groupAddress.padEnd(10) +
 					" = " +
 					this.val_real +
 					" : " +
@@ -194,7 +197,7 @@ class KNXGroupAddress {
 			case 14:
 				debugS7(
 					"KNX -> PLC : " +
-					this.groupAddress +
+					this.groupAddress.padEnd(10) +
 					" = " +
 					this.val_real +
 					" : " +
@@ -209,7 +212,7 @@ class KNXGroupAddress {
 			case 232:
 				debugS7(
 					"KNX -> PLC : " +
-					this.groupAddress +
+					this.groupAddress.padEnd(10) +
 					" = " +
 					this.byte +
 					" : " +

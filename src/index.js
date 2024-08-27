@@ -50,7 +50,7 @@ async function sendSyncKNX() {
 	if (item != undefined) {
 		counter++
 
-		debugS7(`PLC -> KNX : ${item.groupAddress.padStart(12)} : ${item.value.padStart(8)} -> Counter ${counter}`);
+		debugS7(`PLC -> KNX : ${item.groupAddress.padEnd(10)} : ${item.value.toString().padEnd(21)} -> Counter ${counter}`);
 		knxConnection.connection.write(item.groupAddress, item.value, item.dpt);
 	}
 
