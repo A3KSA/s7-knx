@@ -48,7 +48,7 @@ class KNXConnection extends EventEmitter {
                             "Disconnected from KNX IP gateway"
                         );
                     },
-                    event: function (evt, src, dest, value) {
+                    event: (evt, src, dest, value) => {
                         debugKNX(
                             "event: %s, src: %j, dest: %j, value: %j",
                             evt,
@@ -56,6 +56,8 @@ class KNXConnection extends EventEmitter {
                             dest,
                             value
                         );
+                        const eventName = evt + "_" + dest;
+                        this.emit(eventName, src, value);
                     },
                 },
                 // Other configurations
