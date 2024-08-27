@@ -1,10 +1,12 @@
 debugKNX = require("debug")("knx");
 const knx = require("knx");
+const EventEmitter = require("events");
 
 
 // KNX Connection
-class KNXConnection {
+class KNXConnection extends EventEmitter {
     constructor() {
+        super();
         if (!KNXConnection.instance) {
             this.connection = null;
             KNXConnection.instance = this;
@@ -31,7 +33,7 @@ class KNXConnection {
             this.connection = knx.Connection({
                 ipAddr: process.env.KNX_IP, // KNX IP gateway address
                 ipPort: process.env.KNX_PORT, // default KNX IP port
-                debug: process.env.KNX_DEBUG, // enable the debug output
+                loglevel: process.env.KNX_DEBUG, // enable the debug output
                 handlers: {
                     connected: () => {
                         debugKNX("Connected to KNX IP gateway");
