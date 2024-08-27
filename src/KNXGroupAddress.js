@@ -34,7 +34,7 @@ class KNXGroupAddress {
 		this.dpt = "DPT1.001";
 		this.byte = [];
 
-		
+
 
 	}
 
@@ -80,9 +80,9 @@ class KNXGroupAddress {
 
 		// If on the PLC side, the variable is WRITE ONLY, we don't need to setup a listener to send the value to the PLC
 		if (!this.isWriteOnly) {
+			debugGA("Setting up listener for " + this.groupAddress + "…");
 			this.setupListeners("GroupValue_Write_" + this.groupAddress);
 		}
-
 
 		this.dpt = "DPT" + this.type + ".001";
 
@@ -115,12 +115,6 @@ class KNXGroupAddress {
 			this.val_int = buffer.readInt16BE(structOffset + 8); // Int - 2 bytes at offset 8
 			this.val_real = buffer.readFloatBE(structOffset + 10); // Real - 4 bytes at offset 10
 			// Total size for one entry: 14 bytes
-		}else if (structUDTType[this.type].type == "13") {
-			this.byte[0] = buffer.readUInt8(structOffset + 7);
-			this.byte[1] = buffer.readUInt8(structOffset + 8);
-			this.byte[2] = buffer.readUInt8(structOffset + 9);
-			this.byte[3] = buffer.readUInt8(structOffset + 10);
-			// Total size for one entry: 11 bytes
 		} else if (structUDTType[this.type].type == "232") {
 			this.byte[0] = buffer.readUInt8(structOffset + 7);
 			this.byte[1] = buffer.readUInt8(structOffset + 8);
@@ -361,7 +355,15 @@ class KNXGroupAddress {
 	 * @param {String} eventName
 	 */
 	setupListeners(eventName) {
-		knxConnection.connection.on(eventName, (src, value) => this.eventHandler(src, value));
+		knxConnection.on(eventName, this.eventHandler);
+	}
+
+	/**
+	 * Remove the listeners for the given event name
+	 * @param {String} eventName
+	 */
+	removeListeners(eventName) {
+		knxConnection.off(eventName, this.eventHandler);
 	}
 
 	/**
@@ -369,7 +371,7 @@ class KNXGroupAddress {
 	 * @param {String} src KNX Device Address
 	 * @param {String} value
 	 */
-	eventHandler(src, value) {
+	eventHandler = (src, value) => {
 		var convertedValue = this.convertFromDPT(value);
 		switch (this.type) {
 			case 1:
@@ -398,13 +400,6 @@ class KNXGroupAddress {
 		this.sendToPLC();
 	}
 
-	/**
-	 * Remove the listeners for the given event name
-	 * @param {String} eventName
-	 */
-	removeListeners(eventName) {
-		knxConnection.connection.off(eventName, (src, value) => this.eventHandler(src, value));
-	}
 
 	/**
 	 * Convert the raw value to a readable value
