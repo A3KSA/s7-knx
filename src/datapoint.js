@@ -11,8 +11,6 @@ class DatapointService {
         this.buffer = null;
     }
 
-
-
     /**
      * Map the buffer to objects
      * @param {Buffer} buffer
@@ -71,7 +69,7 @@ class DatapointService {
     async reloadDatapointById(id) {
         throw new Error("Not implemented");
     }
-        
+
 
 
 }
