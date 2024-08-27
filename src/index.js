@@ -86,7 +86,7 @@ async function cyclicReadDB(plcConnection, interval) {
  */
 async function main() {
 	try {
-		
+
 
 		expressServer(datapointService);
 
@@ -96,7 +96,7 @@ async function main() {
 
 
 		// Start cyclic read of DB
-		const readInterval = process.env.S7_READ_INTERVAL ; // Interval in milliseconds
+		const readInterval = process.env.S7_READ_INTERVAL; // Interval in milliseconds
 		cyclicReadDB(plcConnection, readInterval);
 
 		// Set the dequeue interval

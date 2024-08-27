@@ -1,5 +1,8 @@
-const {removeLeadingZeros, clamp, compareValues} = require('./utils');
-const EventEmitter = require("events");
+const {
+	removeLeadingZeros,
+	clamp,
+	compareValues
+} = require('./utils');
 const debugGA = require("debug")("s7-knx:ga");
 const debugS7 = require("debug")("s7-knx:s7");
 const debugQueue = require("debug")("s7-knx:queue");
@@ -8,14 +11,17 @@ const DPTLib = require("knx/src/dptlib");
 const knxConnection = require("./knx");
 const queue = require("./queue");
 const plcConnection = require("./s7/connection");
-const { structUDTType } = require("./CONSTANTS");
+const {
+	structUDTType
+} = require("./CONSTANTS");
 
 
 // KNX Group Address Object
-class KNXGroupAddress extends EventEmitter {
+class KNXGroupAddress {
 	constructor(offset) {
-		super();
+
 		this._previousValue = null;
+		this._previousType = null;
 
 		// Unformatted GA
 		this._previousGA = null;
@@ -28,25 +34,27 @@ class KNXGroupAddress extends EventEmitter {
 		this.dpt = "DPT1.001";
 		this.byte = [];
 
+		
+
 	}
 
-    toPlainObject() {
-        return {
-            groupAddress: this.groupAddress,
-            offset: this.offset,
-            dpt: this.dpt,
-            val_bool: this.val_bool,
-            val_int: this.val_int,
-            val_real: this.val_real,
-            isReadOnly: this.isReadOnly,
-            isWriteOnly: this.isWriteOnly,
-            send_request: this.send_request,
-            send_ack: this.send_ack,
-            sendByChange: this.sendByChange,
-            Type: this.type,
-			byte : this.byte
-        }
-    }
+	toPlainObject() {
+		return {
+			groupAddress: this.groupAddress,
+			offset: this.offset,
+			dpt: this.dpt,
+			val_bool: this.val_bool,
+			val_int: this.val_int,
+			val_real: this.val_real,
+			isReadOnly: this.isReadOnly,
+			isWriteOnly: this.isWriteOnly,
+			send_request: this.send_request,
+			send_ack: this.send_ack,
+			sendByChange: this.sendByChange,
+			Type: this.type,
+			byte: this.byte
+		}
+	}
 
 	// function to translate the GA (groupAdress) to a KNX string like 0/00/000 because this.GA format is 0000000
 	async setGA() {
@@ -79,7 +87,7 @@ class KNXGroupAddress extends EventEmitter {
 		this.dpt = "DPT" + this.type + ".001";
 
 		debugGA(
-			"GA changed from " + this._previousGroupAddress + " to " + this.groupAddress + " with DPT " + this.dpt + " and type " + this.type 
+			"GA changed from " + this._previousGroupAddress + " to " + this.groupAddress + " with DPT " + this.dpt + " and type " + this.type
 		);
 
 		this._previousGroupAddress = this.groupAddress;
@@ -94,27 +102,35 @@ class KNXGroupAddress extends EventEmitter {
 		// Reading a byte and extracting bits for boolean values
 		const boolByte = buffer.readUInt8(structOffset + 6);
 
+		// Common values for all types
 		this.isReadOnly = !!(boolByte & 0x01); // Bool at bit 0
 		this.isWriteOnly = !!(boolByte & 0x02); // Bool at bit 1
 		this.send_request = !!(boolByte & 0x04); // Bool at bit 2
 		this.send_ack = !!(boolByte & 0x08); // Bool at bit 3
 		this.sendByChange = false // For future use - If the value is sent when it changes
 
+		// Specific values for each type
 		if (structUDTType[this.type].type == "Generic") {
-		this.val_bool = !!(boolByte & 0x10); // Bool at bit 4
-		this.val_int = buffer.readInt16BE(structOffset + 8); // Int - 2 bytes at offset 8
-		this.val_real = buffer.readFloatBE(structOffset + 10); // Real - 4 bytes at offset 10
-		// Total size for one entry: 14 bytes
+			this.val_bool = !!(boolByte & 0x10); // Bool at bit 4
+			this.val_int = buffer.readInt16BE(structOffset + 8); // Int - 2 bytes at offset 8
+			this.val_real = buffer.readFloatBE(structOffset + 10); // Real - 4 bytes at offset 10
+			// Total size for one entry: 14 bytes
+		}else if (structUDTType[this.type].type == "13") {
+			this.byte[0] = buffer.readUInt8(structOffset + 7);
+			this.byte[1] = buffer.readUInt8(structOffset + 8);
+			this.byte[2] = buffer.readUInt8(structOffset + 9);
+			this.byte[3] = buffer.readUInt8(structOffset + 10);
+			// Total size for one entry: 11 bytes
 		} else if (structUDTType[this.type].type == "232") {
 			this.byte[0] = buffer.readUInt8(structOffset + 7);
 			this.byte[1] = buffer.readUInt8(structOffset + 8);
 			this.byte[2] = buffer.readUInt8(structOffset + 9);
+			// Total size for one entry: 10 bytes
 		}
 
 		// Format the GA to a KNX string
 		if (this.GA != this._previousGA) {
 			this._previousGA = this.GA;
-
 			await this.setGA();
 		}
 
@@ -166,7 +182,7 @@ class KNXGroupAddress extends EventEmitter {
 				offset = this.offset + 8;
 				this._previousValue = this.val_int;
 				break;
-			case 9:
+			case 9, 13:
 				debugS7(
 					"KNX -> PLC : " +
 					this.groupAddress +
@@ -207,7 +223,7 @@ class KNXGroupAddress extends EventEmitter {
 				);
 				// convert the real value to a buffer
 				buffer = Buffer.from(this.byte);
-				
+
 				offset = this.offset + 7;
 				this._previousValue = this.byte;
 				break;
@@ -270,7 +286,7 @@ class KNXGroupAddress extends EventEmitter {
 	// Read the value from the PLC and send it to the KNX bus if it's different from the current value
 	// The check of _previousValue is to avoid sending the value to the KNX bus at startup
 	async sendToBus() {
-		var value;
+		var value = null;
 		// switch to write to a different variable in function of the type value
 		switch (this.type) {
 			case 1:
@@ -283,6 +299,7 @@ class KNXGroupAddress extends EventEmitter {
 				break;
 
 			case 9:
+			case 13:
 				value = this.val_real;
 				break;
 
@@ -291,7 +308,11 @@ class KNXGroupAddress extends EventEmitter {
 				break;
 
 			case 232:
-				value = { red: this.byte[0], green: this.byte[1], blue: this.byte[2] };
+				value = {
+					red: this.byte[0],
+					green: this.byte[1],
+					blue: this.byte[2]
+				};
 				break;
 
 			default:
@@ -309,7 +330,7 @@ class KNXGroupAddress extends EventEmitter {
 		if (compareValues(value, this._previousValue) && !this.send_request) {
 			return;
 		}
-		
+
 		// If previous value is the same as the current value and the request and ack are true, we don't need to send it
 		if (compareValues(value, this._previousValue) && this.send_request && this.send_ack) {
 			return;
@@ -340,7 +361,7 @@ class KNXGroupAddress extends EventEmitter {
 	 * @param {String} eventName
 	 */
 	setupListeners(eventName) {
-		knxConnection.connection.on(eventName, (...args) => this.eventHandler(...args));
+		knxConnection.connection.on(eventName, (src, value) => this.eventHandler(src, value));
 	}
 
 	/**
@@ -358,6 +379,7 @@ class KNXGroupAddress extends EventEmitter {
 				this.val_int = convertedValue;
 				break;
 			case 9:
+			case 13:
 				this.val_real = convertedValue;
 				break;
 			case 14:
@@ -381,7 +403,7 @@ class KNXGroupAddress extends EventEmitter {
 	 * @param {String} eventName
 	 */
 	removeListeners(eventName) {
-		knxConnection.connection.off(eventName, this.eventHandler.bind(this));
+		knxConnection.connection.off(eventName, (src, value) => this.eventHandler(src, value));
 	}
 
 	/**

@@ -23,9 +23,11 @@ function clamp(val, min, max) {
 // Function to compare two values
 function compareValues(val1, val2) {
 	if (typeof val1 !== typeof val2) return false;
+
 	if (typeof val1 === 'object') {
 		return JSON.stringify(val1) === JSON.stringify(val2);
 	}
+	
 	return val1 === val2;
 }
 
