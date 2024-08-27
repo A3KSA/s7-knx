@@ -179,7 +179,8 @@ class KNXGroupAddress {
 				offset = this.offset + 8;
 				this._previousValue = this.val_int;
 				break;
-			case 9, 13:
+			case 9:
+			case 13:
 				debugS7(
 					"KNX -> PLC : " +
 					this.groupAddress.padEnd(10) +
