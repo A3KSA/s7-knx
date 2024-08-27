@@ -7,6 +7,7 @@ const structUDTType = {
     1: {size : 14, type : "Generic"},
     5: {size : 14, type : "Generic"},
     9: {size : 14, type : "Generic"},
+    13: {size : 14, type : "Generic"},
     14: {size : 14, type : "Generic"},
     232: {size : 10, type : "232"}
 };
