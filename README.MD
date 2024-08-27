@@ -102,6 +102,7 @@ See [NodeJS-inst-url]
     S7_READ_INTERVAL=100
     S7_IP=10.10.6.159
     S7_DB=10
+    S7_START_OFFSET=2
    ```
 5. Set up your S7 project with the given UDT and DB
 6. Start
@@ -131,6 +132,13 @@ You can use the following code in your S7 project to update it dynamically :
    ```
 
 ## UDT description
+
+You need a row in the PLC's DB for each telegram. For the moment there is a generic UDT and one for the DPT232.
+
+The UDT define the structure with the necessary data and variable for a telegramm to be sent or received.
+
+Generic UDT
+
 | Line       | Description                        | Exemple |
 |------------|----------------------------------- |---------|
 | GA         | KNX Group Address                  | 0107064 |
@@ -141,7 +149,21 @@ You can use the following code in your S7 project to update it dynamically :
 | SEND_ACK   | Acknowledge of the sending request | false   |
 | val_bool   | Value from KNX if set to type 1    | true    |
 | val_int    | Int value from KNX if type 5       | 10      |
-| val_real   | Real value from KXN if type 9      | 42.5    |
+| val_real   | Real value from KXN if type 9, 14  | 42.5    |
+
+UDT for KNX DPT 232 (RGB)
+
+| Line       | Description                        | Exemple |
+|------------|----------------------------------- |---------|
+| GA         | KNX Group Address                  | 0107064 |
+| Type       | KNX Datapoint type                 | 1       |
+| READ_ONLY  | If true, it is not sent to KNX     | false   |
+| WRITE_ONLY | If true, it is not read from KNX   | false   |
+| SEND_REQ   | Request sending to KNX             | true    |
+| SEND_ACK   | Acknowledge of the sending request | false   |
+| byte_0     | Red hex value                      | FF      |
+| byte_0     | Green hex value                    | 06      |
+| byte_0     | Blue hex value                     | AA      |
 
 ### Group Address (GA)
 The group address in KNX is represented with slash : 01/07/064.
@@ -176,6 +198,7 @@ The gateway then set SEND_ACK to true to tell the PLC it was sent. It is the PLC
 | DPT17     	| 8 bit UInt         	| Scene number   	|               	| 8 bit   	|      	| No        	|
 | DPT18     	| 8 bit UInt         	| Scene control  	|               	| 8 bit   	|      	| No        	|
 | DPT19     	| 8 byte date & time 	| Date and time  	| LWord         	|         	|      	| No        	|
+| DPT232    	| 3 byte            	| RGB           	| 3 byte         	|         	| 232  	| Yes       	|
 
 * The value from the PLC should not exceed the size of the KNX DPT.
 
