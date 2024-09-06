@@ -16,7 +16,7 @@
   "license": "MIT",
   "dependencies": {
     "async-exit-hook": "^2.0.1",
-    "debug": "^4.3.6",
+    "debug": "^4.3.7",
     "dotenv": "^16.4.1",
     "express": "^4.19.2",
     "knx": "^2.5.2",
