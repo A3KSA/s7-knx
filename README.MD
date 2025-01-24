@@ -86,11 +86,11 @@ See [NodeJS-inst-url]
    ```sh
    git clone https://github.com/A3KSA/s7-knx.git
    ```
-3. Install NPM packages
+2. Install NPM packages
    ```sh
    npm install
    ```
-4. Set up your `.env`
+3. Set up your `.env`
    ```text
     KNX_IP=192.168.1.100
     KNX_PORT=3671
@@ -104,11 +104,15 @@ See [NodeJS-inst-url]
     S7_DB=10
     S7_START_OFFSET=2
    ```
-5. Set up your S7 project with the given UDT and DB
-6. Start
+4. Set up your S7 project with the given UDT and DB
+5. Start
    ```sh
    npm start
    ```
+6. Or with PM2
+  ```sh
+  pm2 start ecosystem.config.js
+  ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
