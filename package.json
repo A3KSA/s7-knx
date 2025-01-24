@@ -18,7 +18,7 @@
     "async-exit-hook": "^2.0.1",
     "debug": "^4.4.0",
     "dotenv": "^16.4.1",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "knx": "^2.5.2",
     "node-snap7": "^1.0.7"
   },
