@@ -20,7 +20,7 @@
     "dotenv": "^16.4.1",
     "express": "^4.21.2",
     "knx": "^2.5.2",
-    "node-snap7": "^1.0.7"
+    "node-snap7": "^1.0.8"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
