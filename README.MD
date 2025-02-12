@@ -110,9 +110,9 @@ See [NodeJS-inst-url]
    npm start
    ```
 6. Or with PM2
-  ```sh
-  pm2 start ecosystem.config.js
-  ```
+   ```sh
+   pm2 start ecosystem.config.js
+   ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
