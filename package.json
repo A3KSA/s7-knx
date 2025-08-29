@@ -17,8 +17,8 @@
   "dependencies": {
     "async-exit-hook": "^2.0.1",
     "debug": "^4.4.1",
-    "dotenv": "^16.6.1",
-    "express": "^4.21.2",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "knx": "^2.5.4",
     "node-snap7": "^1.0.8"
   },
