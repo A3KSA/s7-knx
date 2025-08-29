@@ -21,10 +21,21 @@ class DatapointService {
         var i = 0;
         var type = buffer.readInt16BE(2 + 4); // Int - 2 bytes at offset 4 (2 bytes for the size of the buffer)
 
+        // Type check - If the type is not valid, throw an error
+        if (typeof structUDTType[type].size !== "number") {
+            throw new Error("Invalid UDT type: " + type);
+        }
+
         for (
             let offset = this.startOffset; offset < buffer.length; offset += structUDTType[type].size
         ) {
             type = buffer.readInt16BE(offset + 4); // Int - 2 bytes at offset 4 (2 bytes for the size of the buffer)
+
+            // Type check - If the type is not valid, throw an error
+            if (typeof structUDTType[type] === "undefined") {
+                throw new Error(`Invalid UDT type: ${type} at offset ${offset}`);
+            }
+
             let objectBuffer = buffer.subarray(offset, offset + structUDTType[type].size);
 
             // create a new object if it doesn't exist
