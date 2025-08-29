@@ -62,8 +62,10 @@ async function sendSyncKNX() {
  * @param {PLCConnection} plcConnection 
  * @param {number} interval 
  */
-async function cyclicReadDB(plcConnection, interval) {
-	while (true) {
+
+let cyclicReadTimer = null;
+function startCyclicReadDB(plcConnection, interval) {
+	async function readCycle() {
 		const startTime = Date.now();
 
 		try {
@@ -74,10 +76,21 @@ async function cyclicReadDB(plcConnection, interval) {
 			console.error("Error during cyclic read:", error);
 		}
 
-		const elapsedTime = Date.now() - startTime;
-		const delay = Math.max(interval - elapsedTime, 0);
+		let delay;
 
-		await new Promise(resolve => setTimeout(resolve, delay));
+		const elapsedTime = Date.now() - startTime;
+		delay = Math.max(interval - elapsedTime, 0);
+		cyclicReadTimer = setTimeout(readCycle, delay);
+
+	}
+	readCycle();
+}
+
+function stopCyclicReadDB() {
+	if (cyclicReadTimer) {
+		clearTimeout(cyclicReadTimer);
+		cyclicReadTimer = null;
+		console.log("Cyclic DB read stopped.");
 	}
 }
 
@@ -97,7 +110,8 @@ async function main() {
 
 		// Start cyclic read of DB
 		const readInterval = process.env.S7_READ_INTERVAL; // Interval in milliseconds
-		cyclicReadDB(plcConnection, readInterval);
+		startCyclicReadDB(plcConnection, readInterval);
+
 
 		// Set the dequeue interval
 		setInterval(sendSyncKNX, 20)
@@ -107,6 +121,16 @@ async function main() {
 			console.log("Disconnecting from KNX…");
 			knxConnection.connection.Disconnect(() => {
 				console.log("Disconnected from KNX");
+				cb();
+			});
+		});
+
+		// Disconnect from PLC
+		exitHook((cb) => {
+			stopCyclicReadDB();
+			console.log("Disconnecting from PLC…");
+			plcConnection.disconnect(() => {
+				console.log("Disconnected from PLC");
 				cb();
 			});
 		});
