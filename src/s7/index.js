@@ -67,6 +67,33 @@ class PLCConection {
         });
     }
 
+    /**
+     * Disconnect from the PLC
+     * @returns {Promise<void>}
+     * @throws {Error} If the disconnection fails
+     */
+    async disconnect() {
+        if (!this.s7client) {
+            throw new Error("S7 client is not initialized.");
+        }
+
+        try {
+            await new Promise((resolve, reject) => {
+                this.s7client.Disconnect((err) => {
+                    if (err) {
+                        reject(new Error("Disconnection failed. Code #" + err + " - " + this.s7client.ErrorText(err)));
+                    } else {
+                        debugS7("Disconnected from PLC");
+                        resolve();
+                    }
+                });
+            });
+        } catch (error) {
+            debugS7("Error disconnecting from PLC:", error);
+            throw error;
+        }
+    }
+
 
     /**
      * Function to read the db size
@@ -115,7 +142,8 @@ class PLCConection {
             const buffer = await new Promise((resolve, reject) => {
                 this.s7client.DBRead(this.dbNumber, 0, this.dbSize, function (err, res) {
                     if (err) {
-                        reject(new Error("DBRead failed. Code #" + err + " - " + s7client.ErrorText(err)));
+                        console.log(err, res);
+                        reject(new Error("DBRead failed. Code #" + err + " - " + this.s7client.ErrorText(err)));
                     } else {
                         resolve(res);
                     }
