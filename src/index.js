@@ -114,7 +114,8 @@ async function main() {
 
 
 		// Set the dequeue interval
-		setInterval(sendSyncKNX, 20)
+		const dequeueInterval = process.env.KNX_DEQUEUE_INTERVAL ?? 20; // Interval in milliseconds
+		setInterval(sendSyncKNX, dequeueInterval);
 
 		// Handle the exit
 		exitHook((cb) => {
