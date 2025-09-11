@@ -4,7 +4,7 @@
   "description": "S7-KNX Gateway",
   "main": "src/index.js",
   "engines": {
-    "node": ">=20 <=22"
+    "node": ">=20 <=24"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -20,10 +20,10 @@
   "dependencies": {
     "async-exit-hook": "^2.0.1",
     "debug": "^4.4.1",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "knx": "^2.5.4",
-    "node-snap7": "^1.0.8"
+    "node-snap7": "^1.0.9"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
