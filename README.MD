@@ -76,7 +76,7 @@ This project was made to allow interactions between Siemens S7 PLCs and the KNX 
 
 ### Prerequisites
 
-You need NodeJS and NPM to run this project. Tested with node v18.19.0 and v20.11.0 (current LTS)
+You need NodeJS and NPM to run this project. Tested with node v22 and v24.
 
 See [NodeJS-inst-url]
 
@@ -97,12 +97,14 @@ See [NodeJS-inst-url]
     KNX_ADDRESS=15.15.15
     KNX_MIN_DELAY=10
     KNX_MANUAL_CONNECT=false
+    KNX_DEQUEUE_INTERVAL=20 # Interval in ms to dequeue telegram to send to KNX
     DEBUG='s7-knx:*'
     SEND_AT_START=false
     S7_READ_INTERVAL=100
     S7_IP=10.10.6.159
     S7_DB=10
     S7_START_OFFSET=2
+    KNX_DEBUG=info # error, warn, info, debug, trace
    ```
 4. Set up your S7 project with the given UDT and DB
 5. Start
