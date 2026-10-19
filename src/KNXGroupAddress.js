@@ -79,7 +79,7 @@ class KNXGroupAddress {
 		}
 
 		// If on the PLC side, the variable is WRITE ONLY, we don't need to setup a listener to send the value to the PLC
-		if (!this.isWriteOnly) {
+		if (!this.isWriteOnly && this.groupAddress != "0/0/0") {
 			debugGA("Setting up listener for " + this.groupAddress + "…");
 			this.setupListeners("GroupValue_Write_" + this.groupAddress);
 		}
